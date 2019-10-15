@@ -25,7 +25,7 @@ def generate_ta(data):
 
 def preproc_pipeline(data):
     """
-    Runs ta on a dataset
+    Preprocesses a dataset to be used for training. 
     """
     # Preprocess
     data = preprocess(data)
@@ -41,4 +41,5 @@ def preproc_pipeline(data):
     validation_set = shape_for_keras(validation_set)
     test_set = shape_for_keras(test_set)
 
+    # We could save this to csv.
     return train_set, validation_set, test_set
