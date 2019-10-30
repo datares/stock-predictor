@@ -1,5 +1,6 @@
 data/
+Data/
 __pycache__/
 .vscode/
-env/
+venv_stock_predictor/
 .vscode/settings.json
