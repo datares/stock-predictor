@@ -1,4 +1,4 @@
-from common import merge_df
+from common import create_data
 import os
 
 # main_dir = os.getcwd()
@@ -9,7 +9,7 @@ import os
 # os.chdir(main_dir)
 # os.chdir("stocks/Data/Stocks")
 # stock_list = os.listdir()
-# stocks = merge_df(stock_list)
+# stocks = create_data(stock_list)
 
 # Concatenating ETF data
 
@@ -18,4 +18,4 @@ import os
 # os.chdir("stocks/Data/ETFs")
 # etf_list = os.listdir()
 
-# etf = merge_df(etf_list)
+# etf = create_data(etf_list)
