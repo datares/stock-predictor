@@ -9,7 +9,7 @@ def merge_df(file_list):
     for file in file_list:
         if (os.stat(file).st_size != 0):
             df = pd.read_csv(file, sep = ",")
-            df['symbol'] = file
+            df['symbol'] = file.split(".")[0]
             df_list = df_list.append(df)
             print (counter, " out of ", len(file_list))
             counter += 1
