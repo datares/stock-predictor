@@ -43,27 +43,38 @@ def preprocess(data):
 
     return df
 
-def build_timeseries(mat, y_col_index, time_steps):
+def build_timeseries(df, y_col_index, time_steps, type):
     """
     y_col_index is the index of column that would act as output column
     total number of time-series samples would be len(mat) - time steps
+    type represents whether it is train or test data
     """
-    dim_0 = mat.shape[0] - time_steps
-    dim_1 = mat.shape[1]
-    # input is in shape [batch_size (rows), timesteps, features (cols)]
-    x = np.zeros((dim_0, time_steps, dim_1))
-    y = np.zeros((dim_0,))
-    
-    for i in range(dim_0):
-        x[i] = mat[i:time_steps+i]
-        y[i] = mat[time_steps+i, y_col_index]
-    return x, y
+    dim_0 = df.shape[0] - time_steps
+    dim_1 = df.shape[1]
 
-def shape_for_keras(data):
+    if (type == 'train'):
+        # input is in shape [batch_size (rows), timesteps, features (cols)]
+        x = np.zeros((dim_0, time_steps, dim_1))
+        for i in range(dim_0):
+            x[i] = df[i:time_steps+i]
+        return x
+    elif (type == 'test'):
+        y = np.zeros((dim_0,))
+        for i in range(dim_0):
+            y[i] = df[time_steps+i, y_col_index]
+        return y
+    else:
+        return False
+
+def shape_for_keras(data, predicted_col, time_steps, batch_size, type):
     """
     This class takes in a pre_processed pandas dataframe and cleans it
     """
-    raise NotImplementedError
+    x = build_timeseries(data, predicted_col, time_steps, type)
+    # Trimming the data to make sure that it will fit the batch size
+    x = trim_dataset(x, batch_size)
+
+    return x 
 
 def train_val_test_split(data):
     """
@@ -82,7 +93,7 @@ def generate_ta(data):
     """
     raise NotImplementedError
 
-def preproc_pipeline(data):
+def preproc_pipeline(data, time_steps, batch_size):
     """
     Preprocesses a dataset to be used for training. 
     """
@@ -96,9 +107,9 @@ def preproc_pipeline(data):
     train_set, validation_set, test_set = train_val_test_split(data)
     
     # Set up for Keras
-    train_set = shape_for_keras(train_set)
-    validation_set = shape_for_keras(validation_set)
-    test_set = shape_for_keras(test_set)
+    train_set = shape_for_keras(train_set, 3, time_steps, batch_size, 'train')
+    validation_set = shape_for_keras(validation_set, 3, time_steps, batch_size, 'test')
+    test_set = shape_for_keras(test_set, 3, time_steps, batch_size, 'test')
 
     # We could save this to csv.
     return train_set, validation_set, test_set
