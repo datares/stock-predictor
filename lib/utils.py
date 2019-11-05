@@ -6,6 +6,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 # from ta import *
 
+#### DATA CREATION FUNCTIONS ####
 def create_data(file_list):
     """
     create data from text files
@@ -21,16 +22,49 @@ def create_data(file_list):
             counter += 1
     return pd.DataFrame(df_list)
 
-def trim_dataset(mat, batch_size):
-    """
-    trims dataset to a size that's divisible by the batch size
-    """
-    no_of_rows_drop = mat.shape[0]%batch_size
-    if(no_of_rows_drop > 0):
-        return mat[:-no_of_rows_drop]
-    else:
-        return mat
+def fetch_data():
+    main_dir = os.getcwd()
+    # STOCKS
+    os.chdir(main_dir)
+    os.chdir("./data/Stocks")
+    stock_list = os.listdir()
+    stocks = create_data(stock_list)
+    #ETFs
+    os.chdir(main_dir)
+    os.chdir("./data/ETFs")
+    etf_list = os.listdir()
+    etf = create_data(etf_list)
 
+    return stocks, etf
+
+def generate_ta(data):
+    """
+    Runs ta on a dataset and outputs as csv
+    """
+    # converts data into ta dataframe
+    df = add_all_ta_features(data, "Open", "High", "Low", "Close", "Volume_BTC", fillna=True)
+    
+    # prints dataframe
+    # df.head()
+    
+    # plots all features
+    # for col in df.columns:
+    # plt.plot(df[col])
+    # plt.title(col)
+    # plt.show()
+    df.to_csv("../data/output.csv")
+    return True
+
+def create_dataframes(data):
+    """
+    Preprocesses a dataset and runs ta on it, outputting a csv
+    """
+    # Preprocess
+    data = clean_and_scale(data)
+    data = generate_ta(data)
+    return True
+
+#### DATA PROCESSING FUNCTIONS ####
 def clean_and_scale(data):
     """
     This class takes in a pandas dataframe and cleans it
@@ -68,54 +102,39 @@ def build_timeseries(df, y_col_index, time_steps, type):
     else:
         return False
 
-def reshape_data(data, predicted_col, time_steps, batch_size, type):
+def trim_dataset(mat, batch_size):
+    """
+    trims dataset to a size that's divisible by the batch size
+    """
+    no_of_rows_drop = mat.shape[0]%batch_size
+    if(no_of_rows_drop > 0):
+        return mat[:-no_of_rows_drop]
+    else:
+        return mat
+
+def reshape_data(data, predicted_col, time_steps, batch_size, df_type):
     """
     This class takes in a pre_processed pandas dataframe and cleans it
     """
-    x = build_timeseries(data, predicted_col, time_steps, type)
+    x = build_timeseries(data, predicted_col, time_steps, df_type)
     # Trimming the data to make sure that it will fit the batch size
     x = trim_dataset(x, batch_size)
 
     return x 
 
-def train_val_test_split(data):
-    """
-    Returns three arrays. 3/4 data (train_set), 1/8 (validation_set),
-    1/8 (test_set)
-    """
-    # splits the data into training and testing set without shuffling (time series)
-    df_train, df_test = train_test_split(data, train_size=0.75, test_size=0.25, shuffle=False)
-    df_val, df_test = np.split(df_test, 2)
+# def train_val_test_split(data):
+#     """
+#     Returns three arrays. 3/4 data (train_set), 1/8 (validation_set),
+#     1/8 (test_set)
+#     """
+#     # splits the data into training and testing set without shuffling (time series)
+#     df_train, df_test = train_test_split(data, train_size=0.75, test_size=0.25, shuffle=False)
+#     df_val, df_test = np.split(df_test, 2)
+# 
+#     return df_train, df_val, df_test
 
-    return df_train, df_val, df_test
 
-def generate_ta(data):
-    """
-    Runs ta on a dataset and outputs as csv
-    """
-    # converts data into ta dataframe
-    df = add_all_ta_features(data, "Open", "High", "Low", "Close", "Volume_BTC", fillna=True)
-    
-    # prints dataframe
-    # df.head()
-    
-    # plots all features
-    # for col in df.columns:
-    # plt.plot(df[col])
-    # plt.title(col)
-    # plt.show()
-    df.to_csv("../data/output.csv")
-    return True
-
-def create_dataframes(data):
-    """
-    Preprocesses a dataset and runs ta on it, outputting a csv
-    """
-    # Preprocess
-    data = preprocess(data)
-    data = generate_ta(data)
-    return True
-    
+#### FINAL PIPELINE FUNCTION ####
 def preproc_pipeline(data, time_steps, batch_size):
     """
     The preprocessing pipeline takes in a csv of processed data and creates
@@ -123,27 +142,15 @@ def preproc_pipeline(data, time_steps, batch_size):
     """
 
     # Split
-    train_set, validation_set, test_set = train_val_test_split(data)
+    train_set, test_set = train_test_split(data, train_size=0.75, test_size=0.25, shuffle=False)
     
     # Set up for Keras
-    train_set = shape_for_keras(train_set, 3, time_steps, batch_size, 'train')
-    validation_set = shape_for_keras(validation_set, 3, time_steps, batch_size, 'test')
-    test_set = shape_for_keras(test_set, 3, time_steps, batch_size, 'test')
+    train_set = reshape_data(train_set, 3, time_steps, batch_size, 'train')
+    test_set = reshape_data(test_set, 3, time_steps, batch_size, 'test')
+
+    # We have to reshape the data first before we can split it to a validation set
+    # This is in order to have equally sized test and val
+    validation_set, test_set = np.split(test_set, 2)
 
     # We could save this to csv.
     return train_set, validation_set, test_set
-
-def fetch_data():
-    main_dir = os.getcwd()
-    # STOCKS
-    os.chdir(main_dir)
-    os.chdir("./data/Stocks")
-    stock_list = os.listdir()[]
-    stocks = create_data(stock_list)
-    #ETFs
-    os.chdir(main_dir)
-    os.chdir("./data/ETFs")
-    etf_list = os.listdir()
-    etf = create_data(etf_list)
-
-    return stocks, etf
