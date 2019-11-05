@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib as plt
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
-import ta import *
+from ta import *
 
 def create_data(file_list):
     """
@@ -19,7 +19,7 @@ def create_data(file_list):
             df_list = df_list.append(df)
             print (counter, " out of ", len(file_list))
             counter += 1
-    return DataFrame(df_list)
+    return pd.DataFrame(df_list)
 
 def trim_dataset(mat, batch_size):
     """
@@ -93,20 +93,19 @@ def generate_ta(data):
     """
     Runs ta on a dataset
     """
-    # cleans data
-    df = preprocess(data)
-    
     # converts data into ta dataframe
-    df = add_all_ta_features(df, "Open", "High", "Low", "Close", "Volume_BTC", fillna=True)
+    df = add_all_ta_features(data, "Open", "High", "Low", "Close", "Volume_BTC", fillna=True)
     
     # prints dataframe
-    df.head()
+    # df.head()
     
     # plots all features
-    for col in df.columns:
-    plt.plot(df[col])
-    plt.title(col)
-    plt.show()
+    # for col in df.columns:
+    # plt.plot(df[col])
+    # plt.title(col)
+    # plt.show()
+    df.to_csv("../data/output.csv")
+    return True
 
 def create_dataframes(data):
     """
@@ -137,11 +136,11 @@ def fetch_data():
     os.chdir(main_dir)
     os.chdir("./data/Stocks")
     stock_list = os.listdir()
-    stocks = merge_df(stock_list)
+    stocks = create_data(stock_list)
     #ETFs
     os.chdir(main_dir)
     os.chdir("./data/ETFs")
     etf_list = os.listdir()
-    etf = merge_df(etf_list)
+    etf = create_data(etf_list)
 
     return stocks, etf
