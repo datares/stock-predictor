@@ -17,8 +17,7 @@ def create_data(file_list):
             df_list = df_list.append(df)
             print (counter, " out of ", len(file_list))
             counter += 1
-    DataFrame(df_list).to_csv("../data/merged_df.csv")
-    return True
+    return DataFrame(df_list)
 
 def trim_dataset(mat, batch_size):
     """
