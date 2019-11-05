@@ -93,20 +93,16 @@ def generate_ta(data):
     """
     Runs ta on a dataset
     """
-    # cleans data
-    df = preprocess(data)
-    
     # converts data into ta dataframe
     df = add_all_ta_features(df, "Open", "High", "Low", "Close", "Volume_BTC", fillna=True)
     
     # prints dataframe
     df.head()
     
-    # plots all features
-    for col in df.columns:
-    plt.plot(df[col])
-    plt.title(col)
-    plt.show()
+    # converts df to csv
+    df.to_csv("../data/ta.csv")
+    
+    return df
 
 def preproc_pipeline(data, time_steps, batch_size):
     """
