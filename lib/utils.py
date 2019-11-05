@@ -1,8 +1,10 @@
 import pandas as pd
 import os
 import numpy as np
+import matplotlib as plt
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
+import ta import *
 
 def create_data(file_list):
     """
@@ -91,7 +93,20 @@ def generate_ta(data):
     """
     Runs ta on a dataset
     """
-    raise NotImplementedError
+    # cleans data
+    df = preprocess(data)
+    
+    # converts data into ta dataframe
+    df = add_all_ta_features(df, "Open", "High", "Low", "Close", "Volume_BTC", fillna=True)
+    
+    # prints dataframe
+    df.head()
+    
+    # plots all features
+    for col in df.columns:
+    plt.plot(df[col])
+    plt.title(col)
+    plt.show()
 
 def create_dataframes(data):
     """
