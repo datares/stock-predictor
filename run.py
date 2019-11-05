@@ -1,7 +1,7 @@
 from lib.utils import preproc_pipeline
 import pandas as pd
 import logging
-logger = logging.getLogger('spam_application')
+logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 if __name__ == "__main__":
