@@ -17,7 +17,8 @@ def create_data(file_list):
             df_list = df_list.append(df)
             print (counter, " out of ", len(file_list))
             counter += 1
-    return pd.DataFrame(df_list)
+    DataFrame(df_list).to_csv("../data/merged_df.csv")
+    return True
 
 def trim_dataset(mat, batch_size):
     """
@@ -93,7 +94,7 @@ def generate_ta(data):
     """
     raise NotImplementedError
 
-def preproc_pipeline(data, time_steps, batch_size):
+def create_dataframes(data):
     """
     Preprocesses a dataset to be used for training. 
     """
@@ -102,7 +103,9 @@ def preproc_pipeline(data, time_steps, batch_size):
 
     # Optional --> run a technical analysis on it and add more features
     data = generate_ta(data)
+    return True
     
+def preproc_pipeline(data, time_steps, batch_size):
     # Split
     train_set, validation_set, test_set = train_val_test_split(data)
     
@@ -113,18 +116,6 @@ def preproc_pipeline(data, time_steps, batch_size):
 
     # We could save this to csv.
     return train_set, validation_set, test_set
-
-def merge_df(file_list):
-    counter = 1
-    df_list = pd.DataFrame()
-    for file in file_list:
-        if (os.stat(file).st_size != 0):
-            df = pd.read_csv(file, sep = ",")
-            df['symbol'] = file.split(".")[0]
-            df_list = df_list.append(df)
-            print (counter, " out of ", len(file_list))
-            counter += 1
-    return pd.DataFrame(df_list)
 
 def fetch_data():
     main_dir = os.getcwd()
