@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib as plt
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
-from ta import *
+# from ta import *
 
 def create_data(file_list):
     """
@@ -31,7 +31,7 @@ def trim_dataset(mat, batch_size):
     else:
         return mat
 
-def preprocess(data):
+def clean_and_scale(data):
     """
     This class takes in a pandas dataframe and cleans it
     """
@@ -68,7 +68,7 @@ def build_timeseries(df, y_col_index, time_steps, type):
     else:
         return False
 
-def shape_for_keras(data, predicted_col, time_steps, batch_size, type):
+def reshape_data(data, predicted_col, time_steps, batch_size, type):
     """
     This class takes in a pre_processed pandas dataframe and cleans it
     """
@@ -91,7 +91,7 @@ def train_val_test_split(data):
 
 def generate_ta(data):
     """
-    Runs ta on a dataset
+    Runs ta on a dataset and outputs as csv
     """
     # converts data into ta dataframe
     df = add_all_ta_features(data, "Open", "High", "Low", "Close", "Volume_BTC", fillna=True)
@@ -109,16 +109,19 @@ def generate_ta(data):
 
 def create_dataframes(data):
     """
-    Preprocesses a dataset to be used for training. 
+    Preprocesses a dataset and runs ta on it, outputting a csv
     """
     # Preprocess
     data = preprocess(data)
-
-    # Optional --> run a technical analysis on it and add more features
     data = generate_ta(data)
     return True
     
 def preproc_pipeline(data, time_steps, batch_size):
+    """
+    The preprocessing pipeline takes in a csv of processed data and creates
+    the training, validation, and test sets
+    """
+
     # Split
     train_set, validation_set, test_set = train_val_test_split(data)
     
@@ -135,7 +138,7 @@ def fetch_data():
     # STOCKS
     os.chdir(main_dir)
     os.chdir("./data/Stocks")
-    stock_list = os.listdir()
+    stock_list = os.listdir()[]
     stocks = create_data(stock_list)
     #ETFs
     os.chdir(main_dir)
