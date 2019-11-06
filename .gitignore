@@ -5,3 +5,4 @@ __pycache__/
 venv_stock_predictor/
 .vscode/settings.json
 __pycache__/
+.DS_Store
