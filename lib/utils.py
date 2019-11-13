@@ -6,7 +6,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.externals import joblib 
 import time
-from ta import *
+import ta
 
 #### DATA CREATION FUNCTIONS ####
 def create_data(file_list):
@@ -67,7 +67,7 @@ def generate_ta(data):
     # converts data into ta dataframe
     df = add_all_ta_features(data, "Open", "High", "Low", "Close", "Volume", fillna=True)
     df.to_csv("../data/df_ta.csv")
-def build_timeseries(df, y_col_index, look_back, type):
+def build_window(df, y_col_index, look_back, type):
     """
     WRONG --> FIX THIS!
     y_col_index is the index of column that would act as output column
@@ -104,7 +104,7 @@ def reshape_data(data, predicted_col, look_back, batch_size, df_type):
     """
     This class takes in a pre_processed pandas dataframe and cleans it
     """
-    x = build_timeseries(data, predicted_col, look_back, df_type)
+    x = build_window(data, predicted_col, look_back, df_type)
     # Trimming the data to make sure that it will fit the batch size
     x = trim_dataset(x, batch_size)
 
