@@ -139,3 +139,28 @@ def preproc_pipeline(data, look_back, batch_size, needs_processing=False):
 
     # We could save this to csv.
     return train_set, test_set
+
+#### MAKING PREDICTIONS ####
+def moving_test_window_preds(data, num_predictions, TIME_STEPS, model):
+    prediction_list = []
+    moving_test_window = data[-TIME_STEPS:]
+    moving_test_window = np.array(moving_test_window)
+    
+    # Scaling data
+    scaler = MinMaxScaler()
+    moving_test_window = scaler.fit_transform(moving_test_window)
+    
+    # Reshaping data
+    moving_test_window = moving_test_window.reshape((1, TIME_STEPS, 1))
+    
+    for i in range(num_predictions):
+        preds_one_step = model.predict(moving_test_window)
+        prediction_list.append(preds_one_step[0,0])
+        preds_one_step = preds_one_step.reshape(1,1,1)
+        moving_test_window = np.concatenate((moving_test_window[:,1:,:], preds_one_step), axis=1)
+        
+    prediction_list = np.array(prediction_list)
+    prediction_list = prediction_list.reshape(num_predictions, 1)
+    prediction_list = scaler.inverse_transform(prediction_list)
+    
+    return prediction_list
