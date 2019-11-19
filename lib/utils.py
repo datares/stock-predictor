@@ -7,6 +7,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.externals import joblib 
 import time
 import ta
+import tqdm
+from tqdm import tqdm_notebook
 
 #### DATA CREATION FUNCTIONS ####
 def create_data(file_list):
@@ -109,6 +111,21 @@ def reshape_data(data, predicted_col, look_back, batch_size, df_type):
     x = trim_dataset(x, batch_size)
 
     return x 
+
+#### Extract out x and y from train and test dataset
+
+def build_time(df, y_index):
+    row = df.shape[0] - 60
+    cln = df.shape[1]
+    x = np.zeros((row, 60, cln))
+    y = np.zeros((row,))
+    
+    for i in tqdm_notebook(range(row)):
+        x[i] = df[i: i+60]
+        y[i] = df[i+60, y_index]
+    
+    return x, y
+
 
 #### FINAL PIPELINE FUNCTION ####
 def preproc_pipeline(data, look_back, batch_size, needs_processing=False):
