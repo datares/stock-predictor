@@ -7,12 +7,25 @@ from keras.callbacks import CSVLogger
 
 from utils import preproc_pipeline
 
-def setup_model():
+def setup_model(BATCH_SIZE, TIME_STEPS, x_train):
     """
     Returns a keras LSTM model. Our architecture will be kept 
     in this method.
     """
-    raise NotImplementedError
+    model = Sequential()
+
+    model.add(LSTM(50, return_sequences = True, batch_input_shape = (BATCH_SIZE, TIME_STEPS, x_train.shape[2])))
+    model.add(Dropout(0.2))
+
+    model.add(LSTM(units = 50, return_sequences = True))
+    model.add(Dropout(0.2))
+
+    model.add(LSTM(units = 50))
+    model.add(Dropout(0.2))
+
+    model.add(Dense(units = 1))
+
+    return model
 
 def train_model(train_data, model, ts=1000, epochs=10):
     """
