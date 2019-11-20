@@ -163,13 +163,14 @@ def training_preproc_pipeline(train_set, TIME_STEPS, BATCH_SIZE):
 
 #### MAKING PREDICTIONS ####
 def moving_test_window_preds(data, num_predictions, TIME_STEPS, model):
-    prediction_list = []
-    moving_test_window = data[-TIME_STEPS:]
-    moving_test_window = np.array(moving_test_window)
     
     # Scaling data
     scaler = MinMaxScaler()
     moving_test_window = scaler.fit_transform(moving_test_window)
+    
+    prediction_list = []
+    moving_test_window = data[-TIME_STEPS:]
+    moving_test_window = np.array(moving_test_window)
     
     # Reshaping data
     moving_test_window = moving_test_window.reshape((1, TIME_STEPS, 1))
