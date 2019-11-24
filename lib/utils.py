@@ -1,11 +1,14 @@
-import pandas as pd
+
 import os
-import numpy as np
-import matplotlib as plt
 import time
-import ta
+# import ta
 import tqdm
 from tqdm import tqdm_notebook
+
+## Data Processing
+import pandas as pd
+import numpy as np
+import matplotlib as plt
 
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
@@ -45,20 +48,15 @@ def fetch_data():
     return stocks, etf
 
 
-
 #### DATA PROCESSING FUNCTIONS ####
 def scale_df(data):
     """
     This class takes in a pandas dataframe and generates 
     the normalized version of it
     """
-    col_names = ['Open', 'High', 'Low', 'Close', 'Volume']
-
-    X = data.loc[:,col_names]
-
     # scales the data
     scaler = MinMaxScaler()
-    df = scaler.fit_transform(X)
+    df = scaler.fit_transform(data)
     
     # saves the scaler to file
     joblib.dump(scaler, "{}.pkl".format(time.time()))
@@ -70,15 +68,15 @@ def generate_ta(data):
     # converts data into ta dataframe
     df = add_all_ta_features(data, "Open", "High", "Low", "Close", "Volume", fillna=True)
     df.to_csv("../data/df_ta.csv")
-def build_window(df, TIME_STEPS):
+def build_window(df, look_back):
     """
     Builds sliding windows to shift the batch by 1 step at a time
     """
     x_train = [] # This list contain the sequences to predict when training
     y_train = [] # This list contain the next value of the sequences when training
 
-    for i in range(TIME_STEPS, df.shape[0]):
-        x_train.append(df[i-TIME_STEPS:i,0].tolist()) # ,0 used in order to return the values only
+    for i in range(look_back, df.shape[0]):
+        x_train.append(df[i-look_back:i,0].tolist()) # ,0 used in order to return the values only
         y_train.append(df[i,0].tolist()) # tolist() converts np array to simple array
         
     x_train = np.array(x_train)
@@ -95,33 +93,19 @@ def trim_dataset(mat, batch_size):
         return mat[:-no_of_rows_drop]
     else:
         return mat
-def reshape_data(data, predicted_col, look_back, batch_size, df_type):
-    """
-    This class takes in a pre_processed pandas dataframe and cleans it
-    """
-    x = build_window(data, predicted_col, look_back, df_type)
-    # Trimming the data to make sure that it will fit the batch size
-    x = trim_dataset(x, batch_size)
-
-    return x 
-
-#### Extract out x and y from train and test dataset
-
-def build_time(df, y_index):
-    row = df.shape[0] - 60
-    cln = df.shape[1]
-    x = np.zeros((row, 60, cln))
-    y = np.zeros((row,))
-    
-    for i in tqdm_notebook(range(row)):
-        x[i] = df[i: i+60]
-        y[i] = df[i+60, y_index]
-    
-    return x, y
+# def reshape_data(data, look_back, batch_size):
+#     """
+#     This class takes in a pre_processed pandas dataframe and cleans it
+#     """
+#     x = build_window(data, look_back)
+#     # Trimming the data to make sure that it will fit the batch size
+#     x = trim_dataset(x, batch_size)
+# 
+#     return x 
 
 
 #### FINAL PIPELINE FUNCTION ####
-def preproc_pipeline(data, look_back, batch_size, needs_processing=False):
+def preproc_pipeline(data, needs_processing=False):
     """
     The preprocessing pipeline takes in a csv of processed data and creates
     the training, validation, and test sets
@@ -149,31 +133,34 @@ def preproc_pipeline(data, look_back, batch_size, needs_processing=False):
 
     # We could save this to csv.
     return train_set, test_set
-def training_preproc_pipeline(train_set, TIME_STEPS, BATCH_SIZE):
+def model_preproc_pipeline(data, look_back, batch_size):
     """
-    preprocesses for the training data for training the model
+    preprocesses data for LSTM input
     """
-    x_train, y_train = build_window(train_set, TIME_STEPS)
+    x_train, y_train = build_window(data, look_back)
 
-    x_train = trim_dataset(x_train, BATCH_SIZE)
-    y_train = trim_dataset(y_train, BATCH_SIZE)
+    x_train = trim_dataset(x_train, batch_size)
+    y_train = trim_dataset(y_train, batch_size)
 
     x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
     return x_train, y_train
 
+
 #### MAKING PREDICTIONS ####
-def moving_test_window_preds(data, num_predictions, TIME_STEPS, model):
-    
+def moving_test_window_preds(data, num_predictions, look_back, model):
+    """
+    Makes num_predictions predictions based on a rolling window method
+    """
     # Scaling data
     scaler = MinMaxScaler()
-    moving_test_window = scaler.fit_transform(moving_test_window)
+    data = scaler.fit_transform(data)
     
     prediction_list = []
-    moving_test_window = data[-TIME_STEPS:]
+    moving_test_window = data[-look_back:]
     moving_test_window = np.array(moving_test_window)
     
     # Reshaping data
-    moving_test_window = moving_test_window.reshape((1, TIME_STEPS, 1))
+    moving_test_window = moving_test_window.reshape((1, look_back, 1))
     
     for _ in range(num_predictions):
         preds_one_step = model.predict(moving_test_window)
