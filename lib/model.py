@@ -5,16 +5,16 @@ from keras.layers import LSTM
 from keras import optimizers
 from keras.callbacks import CSVLogger
 
-from utils import preproc_pipeline
+from lib.utils import moving_test_window_preds
 
-def setup_model(BATCH_SIZE, TIME_STEPS, x_train, lr):
+def setup_model(batch_size, look_back):
     """
     Returns a keras LSTM model. Our architecture will be kept 
     in this method.
     """
     model = Sequential()
 
-    model.add(LSTM(50, input_shape = (TIME_STEPS, x_train.shape[2]), return_sequences = True))
+    model.add(LSTM(50, input_shape = (look_back, 1), return_sequences = True))
     model.add(Dropout(0.2))
 
     model.add(LSTM(50, return_sequences = True))
@@ -25,22 +25,27 @@ def setup_model(BATCH_SIZE, TIME_STEPS, x_train, lr):
 
     model.add(Dense(1))
 
-    optimizer = optimizers.RMSprop(lr=lr)
-
     return model
 
-def train_model(train_data, model, ts=1000, epochs=10):
+def train_model(model, x_train, y_train, epochs, batch_size, lr):
     """
     Takes a training dataset and a model and returns a trained model 
     after ts timesteps.
     """
-    raise NotImplementedError
+    optimizer = optimizers.RMSprop(lr=lr)
+    model.compile(optimizer = optimizer, loss = 'mean_squared_error', metrics = ['accuracy'])
 
-def validate_model(validation_data, model, ts=1000):
+    model.fit(x_train, y_train, epochs = epochs, batch_size = batch_size)
+
+    return model
+
+def validate_model(validation_data, num_predictions, model, look_back=1000):
     """
     Takes a validation dataset and a trained model and validates its performance. 
     Should return the accuracy of the model. 
 
     We are going to be using this method for testing too. 
     """
-    raise NotImplementedError
+    predictions = moving_test_window_preds(validation_data, num_predictions, look_back, model)
+    
+    return predictions
