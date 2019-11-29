@@ -60,7 +60,8 @@ def scale_df(data):
     
     # saves the scaler to file
     joblib.dump(scaler, "{}.pkl".format(time.time()))
-    return df
+    return df, scaler
+    
 def generate_ta(data):
     """
     Runs ta on a dataset and saves to csv.
@@ -68,6 +69,7 @@ def generate_ta(data):
     # converts data into ta dataframe
     df = add_all_ta_features(data, "Open", "High", "Low", "Close", "Volume", fillna=True)
     df.to_csv("../data/df_ta.csv")
+    
 def build_window(df, look_back):
     """
     Builds sliding windows to shift the batch by 1 step at a time
@@ -78,11 +80,17 @@ def build_window(df, look_back):
     for i in range(look_back, df.shape[0]):
         x_train.append(df[i-look_back:i,0].tolist()) # ,0 used in order to return the values only
         y_train.append(df[i,0].tolist()) # tolist() converts np array to simple array
-        
+   
+    # Converting arrays from lists to np arrays. 
     x_train = np.array(x_train)
     y_train = np.array(y_train)
-    
+
+    # Rounding numbers to speed up training.
+    x_train = np.round(x_train, 5)
+    y_train = np.round(y_train, 5)
+
     return x_train, y_train
+
 def trim_dataset(mat, batch_size):
     """
     trims dataset to a size that's divisible by the batch size
@@ -119,20 +127,12 @@ def preproc_pipeline(data, needs_processing=False):
         data = pd.read_csv("./df_ta.csv")
 
     # Scale values
-    data = scale_df(data)
+    data, scaler = scale_df(data)
     # Split
-    train_set, test_set = train_test_split(data, train_size=0.75, test_size=0.25, shuffle=False)
+    train_set, testval_set = train_test_split(data, train_size=0.75, test_size=0.25, shuffle=False)
+    validation_set, test_set = train_test_split(testval_set, train_size=0.75, test_size=0.25, shuffle=False)
     
-    # # Set up for Keras
-    # train_set = reshape_data(train_set, 3, look_back, batch_size, 'train')
-    # test_set = reshape_data(test_set, 3, look_back, batch_size, 'test')
-
-    # # We have to reshape the data first before we can split it to a validation set
-    # # This is in order to have equally sized test and val
-    # validation_set, test_set = np.split(test_set, 2)
-
-    # We could save this to csv.
-    return train_set, test_set
+    return train_set, validation_set, test_set, scaler
 def model_preproc_pipeline(data, look_back, batch_size):
     """
     preprocesses data for LSTM input
