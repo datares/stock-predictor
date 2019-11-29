@@ -4,7 +4,7 @@ import time
 import matplotlib.pyplot as plt
 
 from lib.utils import preproc_pipeline, create_data, model_preproc_pipeline, scale_df, trim_dataset
-from lib.model import setup_model, train_model, validate_model
+from lib.model import setup_model, train_model
 from config import Config
 
 if __name__ == "__main__":
@@ -15,10 +15,11 @@ if __name__ == "__main__":
     data = stock.iloc[:,1:6]
     n_features = data.shape[1]
     
-    train_set, validation_set, test_set, scaler = preproc_pipeline(data, False) # This returns train and test set
+    train_set, validation_set, test_set, scaler = preproc_pipeline(data, False) 
     x_train, y_train = model_preproc_pipeline(train_set, 
                                               config.look_back, 
-                                              config.batch_size)
+                                              config.batch_size,
+                                              n_features)
 
     nn = setup_model(n_features, 
                      config.batch_size, 
@@ -30,12 +31,14 @@ if __name__ == "__main__":
                      config.batch_size, 
                      config.lr)
 
-    nn.save("./{}.h5".format(time.time()))
+    nn.save("./saved_models/{}.h5".format(time.time()))
 
     x_val, y_val = model_preproc_pipeline(validation_set, 
                                               config.look_back, 
-                                              config.batch_size)
+                                              config.batch_size,
+                                              n_features)
     val_pred = nn.predict(x_val)
+    
     #val_pred = scaler.inverse_transform([val_pred])
     #y_val = scaler.inverse_transform([y_val])
 

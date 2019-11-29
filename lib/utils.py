@@ -29,6 +29,7 @@ def create_data(file_list):
             print (counter, " out of ", len(file_list))
             counter += 1
     return pd.DataFrame(df_list)
+
 def fetch_data():
     """
     Get the files from the data folder. 
@@ -61,7 +62,7 @@ def scale_df(data):
     # saves the scaler to file
     joblib.dump(scaler, "{}.pkl".format(time.time()))
     return df, scaler
-    
+
 def generate_ta(data):
     """
     Runs ta on a dataset and saves to csv.
@@ -70,7 +71,7 @@ def generate_ta(data):
     df = add_all_ta_features(data, "Open", "High", "Low", "Close", "Volume", fillna=True)
     df.to_csv("../data/df_ta.csv")
     
-def build_window(df, look_back):
+def build_window(df, look_back, n_features):
     """
     Builds sliding windows to shift the batch by 1 step at a time
     """
@@ -78,7 +79,7 @@ def build_window(df, look_back):
     y_train = [] # This list contain the next value of the sequences when training
 
     for i in range(look_back, df.shape[0]):
-        x_train.append(df[i-look_back:i,0].tolist()) # ,0 used in order to return the values only
+        x_train.append(df[i-look_back:i,0:n_features].tolist()) # ,0 used in order to return the values only
         y_train.append(df[i,0].tolist()) # tolist() converts np array to simple array
    
     # Converting arrays from lists to np arrays. 
@@ -101,16 +102,6 @@ def trim_dataset(mat, batch_size):
         return mat[:-no_of_rows_drop]
     else:
         return mat
-# def reshape_data(data, look_back, batch_size):
-#     """
-#     This class takes in a pre_processed pandas dataframe and cleans it
-#     """
-#     x = build_window(data, look_back)
-#     # Trimming the data to make sure that it will fit the batch size
-#     x = trim_dataset(x, batch_size)
-# 
-#     return x 
-
 
 #### FINAL PIPELINE FUNCTION ####
 def preproc_pipeline(data, needs_processing=False):
@@ -133,43 +124,14 @@ def preproc_pipeline(data, needs_processing=False):
     validation_set, test_set = train_test_split(testval_set, train_size=0.75, test_size=0.25, shuffle=False)
     
     return train_set, validation_set, test_set, scaler
-def model_preproc_pipeline(data, look_back, batch_size):
+def model_preproc_pipeline(data, look_back, batch_size, n_features):
     """
     preprocesses data for LSTM input
     """
-    x_train, y_train = build_window(data, look_back)
+    x_train, y_train = build_window(data, look_back, n_features)
 
     x_train = trim_dataset(x_train, batch_size)
     y_train = trim_dataset(y_train, batch_size)
 
-    x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
+    x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], n_features))
     return x_train, y_train
-
-
-#### MAKING PREDICTIONS ####
-def moving_test_window_preds(data, num_predictions, look_back, model):
-    """
-    Makes num_predictions predictions based on a rolling window method
-    """
-    # Scaling data
-    scaler = MinMaxScaler()
-    data = scaler.fit_transform(data)
-    
-    prediction_list = []
-    moving_test_window = data[-look_back:]
-    moving_test_window = np.array(moving_test_window)
-    
-    # Reshaping data
-    moving_test_window = moving_test_window.reshape((1, look_back, 1))
-    
-    for _ in range(num_predictions):
-        preds_one_step = model.predict(moving_test_window)
-        prediction_list.append(preds_one_step[0,0])
-        preds_one_step = preds_one_step.reshape(1,1,1)
-        moving_test_window = np.concatenate((moving_test_window[:,1:,:], preds_one_step), axis=1)
-        
-    prediction_list = np.array(prediction_list)
-    prediction_list = prediction_list.reshape(num_predictions, 1)
-    prediction_list = scaler.inverse_transform(prediction_list)
-    
-    return prediction_list
