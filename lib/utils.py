@@ -50,7 +50,7 @@ def fetch_data():
 
 
 #### DATA PROCESSING FUNCTIONS ####
-def scale_df(data):
+def scale_df(data, model_name):
     """
     This class takes in a pandas dataframe and generates 
     the normalized version of it
@@ -60,7 +60,7 @@ def scale_df(data):
     df = scaler.fit_transform(data)
     
     # saves the scaler to file
-    joblib.dump(scaler, "{}.pkl".format(time.time()))
+    joblib.dump(scaler, "./saved_models/{}.pkl".format(model_name))
     return df, scaler
 
 def generate_ta(data):
@@ -104,21 +104,13 @@ def trim_dataset(mat, batch_size):
         return mat
 
 #### FINAL PIPELINE FUNCTION ####
-def preproc_pipeline(data, needs_processing=False):
+def preproc_pipeline(data, name):
     """
     The preprocessing pipeline takes in a csv of processed data and creates
     the training, validation, and test sets
     """
-    # save ta to csv
-    if needs_processing:
-        stocks, etf = fetch_data()
-        data = pd.concat([stocks, etf])
-        generate_ta(data)
-        # we have to read file
-        data = pd.read_csv("./df_ta.csv")
-
     # Scale values
-    data, scaler = scale_df(data)
+    data, scaler = scale_df(data, name)
     # Split
     train_set, testval_set = train_test_split(data, train_size=0.75, test_size=0.25, shuffle=False)
     validation_set, test_set = train_test_split(testval_set, train_size=0.75, test_size=0.25, shuffle=False)
@@ -135,3 +127,9 @@ def model_preproc_pipeline(data, look_back, batch_size, n_features):
 
     x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], n_features))
     return x_train, y_train
+def generate_dataset():
+        stocks, etf = create_data(".")
+        data = pd.concat([stocks, etf])
+        generate_ta(data)
+        # we have to read file
+        data = pd.read_csv("./df_ta.csv")
